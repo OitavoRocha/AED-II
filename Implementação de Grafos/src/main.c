@@ -1,5 +1,5 @@
 // Otávio Rocha, João Vitor Farias
-// https://github.com/OitavoRocha/AED-II
+// https://github.com/joaovfarias/AeD-II
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
