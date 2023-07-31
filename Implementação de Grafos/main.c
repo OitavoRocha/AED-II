@@ -15,16 +15,139 @@ typedef struct {
     int previousNode;
 }data;
 
+typedef struct{
+    int row;
+    int column;
+    int value;
+}pos;
+pos *Weights;
+
 int buildNodes();
-void addWeight( int ** matrix, int * numNodes );
+void addWeight( int ** matrix, int * numNodes, int * call);
 void MENU( int * option );
 void PRINT( int ** matrix, int * numNodes );
 void dijkstra(int numNodes, int startingNode, int endingNode, int **matrix);
+void kruskal(int call, int nodes);
+pos *posMerge(pos *leftArr, pos *rightArr, int n, int leftSize, int rightSize);
+pos *posMergeSort(pos *array, int n);
+int find(int idx, int *parents);
+int *union_(int *parents, int left, int right);
+
+void kruskal( int call, int nodes ) {
+
+    
+    printf("call: %d\n", call);
+    printf("nodes: %d\n", nodes);
+
+    int *parents = malloc(sizeof(int) * nodes);
+    int cost = 0;
+    int **minSpanTree;
+    
+    minSpanTree = ( int ** )malloc( sizeof( int * ) * nodes );
+    for( int i = 0 ; i < nodes ; ++i )
+    minSpanTree[i] = ( int *)calloc( nodes, sizeof( int ) );
+
+    for (int i = 0; i < nodes; i++){ // Inicializando a lista do union-find
+        parents[i] = -1;
+    }
+
+    pos *orderedWeights = (pos *)malloc(sizeof(pos) * call); 
+    orderedWeights = posMergeSort(Weights, call);
+
+    for (int i = 0; i < call; i++){
+        if (find(orderedWeights[i].row, parents) != find(orderedWeights[i].column, parents)){
+            parents = union_(parents, find(orderedWeights[i].row, parents), find(orderedWeights[i].column, parents));
+            minSpanTree[orderedWeights[i].row][orderedWeights[i].column] = orderedWeights[i].value;
+            minSpanTree[orderedWeights[i].column][orderedWeights[i].row] = orderedWeights[i].value;
+            cost += orderedWeights[i].value;
+        }
+    }
+
+    printf("Minium Spanning Tree Cost: %d\n", cost);
+    printf("Matrix: \n");
+    PRINT(minSpanTree, &nodes);
+
+}
+
+int find(int idx, int *parents){
+
+    while (parents[idx] >= 0){
+        idx = parents[idx];
+    }
+    return idx;
+}
+
+int *union_(int *parents, int left, int right){
+
+    parents[right] = left;
+    return parents;
+}
+
+
+
+pos *posMerge(pos *leftArr, pos *rightArr, int n, int leftSize, int rightSize) {
+
+    pos *output = (pos*)malloc(sizeof(pos) * n);
+    int i = 0, l = 0, r = 0;
+
+    while (l < leftSize && r < rightSize) {
+        if (leftArr[l].value < rightArr[r].value) {
+            output[i] = leftArr[l]; 
+            i++;
+            l++;
+        } else {
+            output[i] = rightArr[r];
+            i++;
+            r++;
+        }
+    }
+    while (l < leftSize) {
+        output[i] = leftArr[l];
+        i++;
+        l++;
+    }
+    while (r < rightSize) {
+        output[i] = rightArr[r];
+        i++;
+        r++;
+    }
+
+    return output;
+}
+
+pos *posMergeSort(pos *array, int n) {
+
+    if (n <= 1) {
+        return array;
+    }
+
+    int mid = n / 2;
+    pos *left = (pos *)malloc(sizeof(pos) * mid);
+    pos *right = (pos *)malloc(sizeof(pos) * (n - mid));
+    pos *resultado;
+    int idx = 0;
+
+    for (int i = 0; i < mid; i++) {
+        left[i] = array[i];
+    }
+    for (int j = mid; j < n; j++) {
+        right[idx] = array[j];
+        idx++;
+    }
+
+    left = posMergeSort(left, mid);
+    right = posMergeSort(right, n - mid);
+    resultado = posMerge(left, right, n, mid, n - mid);
+
+    return resultado;
+}
+
 
 void dijkstra(int numNodes, int startingNode, int endingNode, int **matrix){
 
     int unvisitedNodes[numNodes];
     data table[numNodes];
+    table[startingNode].previousNode = -1; // o começo não tem nó anterior
     int smallestDistance = INT_MAX;
     int smallestDistanceIdx;
 
@@ -60,14 +183,22 @@ void dijkstra(int numNodes, int startingNode, int endingNode, int **matrix){
     }
 
     printf("The shortest distance from %d to %d is: %d\n", startingNode, endingNode, table[endingNode].distance);
+
+    while (table[endingNode].previousNode != -1){
+        printf("%d -> ", endingNode);
+        endingNode = table[endingNode].previousNode;
+    }
+    printf("%d\n", endingNode);
 }
 
 int main() {
-    int nodes =  buildNodes();
+    int nodes = buildNodes();
     int option;
     int **adjacentMatrix;
     int start, end;
+    int call = 0;
 
+    Weights = (pos*)malloc( sizeof(pos) );
     adjacentMatrix = ( int ** )malloc( sizeof( int * ) * nodes );
     for( int i = 0 ; i < nodes ; ++i )
         adjacentMatrix[i] = ( int *)calloc( nodes, sizeof( int ) );
@@ -77,7 +208,7 @@ int main() {
 
         switch (option) {
             case 1:
-                addWeight(adjacentMatrix, &nodes);
+                addWeight(adjacentMatrix, &nodes, &call);
                 break;
             case 2:
                 PRINT( adjacentMatrix, &nodes );
@@ -90,6 +221,9 @@ int main() {
                 dijkstra(nodes, start, end, adjacentMatrix);
                 break;
             case 4:
+                kruskal(call, nodes);
+                break;
+            case 5:
                 return 0;
                 break;
         } 
@@ -97,10 +231,16 @@ int main() {
 }
 
 
-void addWeight( int ** matrix, int * numNodes ) {
+void addWeight( int ** matrix, int * numNodes, int * call ) {
+
+    // VERIFICAR SE REPETIR NODE1 E NODE2, SE REPETIR NAO INCREMENTAR CALL
 
     int node1, node2, weight;
     int flag;
+
+    if ( (*call) != 0 ){
+        Weights = (pos *)realloc(Weights, sizeof(pos) * ((*call) + 1));
+    }
 
     do{
         
@@ -111,7 +251,7 @@ void addWeight( int ** matrix, int * numNodes ) {
         printf("Node 2: ");
         scanf("%d", &node2);
 
-        if( ( node1 >= *numNodes || node1 < 0 ) || ( node2 >= *numNodes || node2 < 0 ) ) {
+        if( (( node1 >= *numNodes || node1 < 0 ) || ( node2 >= *numNodes || node2 < 0 ))  || (node1 == node2)) {
             printf("Numbers of nodes are incorrect! Try again.\n");
             flag = 1;
         }
@@ -125,12 +265,21 @@ void addWeight( int ** matrix, int * numNodes ) {
         
     }   while(weight < 0);
 
+
+
+    Weights[(*call)].row = node1;
+    Weights[(*call)].column = node2;
+    Weights[(*call)].value = weight;
+    (*call)++;
+    
     matrix[node1][node2] = weight;
     matrix[node2][node1] = weight;
+    
 }
 
 
 int buildNodes(){
+
     int numNodes;
 
     do{   
@@ -147,9 +296,10 @@ void MENU( int * option ) {
         printf("  1.Add weight\n");
         printf("  2.Print\n");
         printf("  3.Algoritmo de Dijkstra\n");
-        printf("  4.Quit\n");
+        printf("  4.Kruskal\n");
+        printf("  5.Quit\n");
         scanf("%d", option);
-    } while ( *option < 1 || *option > 4 );
+    } while ( *option < 1 || *option > 5 );
 }
 
 
