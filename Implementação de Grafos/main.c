@@ -23,20 +23,24 @@ typedef struct{
 pos *Weights;
 
 int buildNodes();
-void addWeight( int ** matrix, int * numNodes, int * call);
+void addWeight( int ** matrix, int * numNodes, int * numEdges);
 void MENU( int * option );
 void PRINT( int ** matrix, int * numNodes );
-void dijkstra( int numNodes, int startingNode, int endingNode, int **matrix );
-void kruskal( int call, int nodes );
-void prim( int ** matrix, int nodes );
+void dijkstra( int numNodes, int startingNode, int endingNode, int **matrix, int numEdges);
+void kruskal( int numEdges, int nodes );
+void prim( int ** matrix, int nodes, int numEdges);
 pos *posMerge( pos *leftArr, pos *rightArr, int n, int leftSize, int rightSize );
 pos *posMergeSort( pos *array, int n );
 int find( int idx, int *parents );
 int *union_( int *parents, int left, int right );
 
-void kruskal( int call, int nodes ) {
+void kruskal( int numEdges, int nodes ) {
+
+    if (numEdges == 0){
+        return;
+    }
     
-    printf("call: %d\n", call);
+    printf("numEdges: %d\n", numEdges);
     printf("nodes: %d\n", nodes);
 
     int *parents = malloc(sizeof(int) * nodes);
@@ -51,10 +55,10 @@ void kruskal( int call, int nodes ) {
         parents[i] = -1;
     }
 
-    pos *orderedWeights = (pos *)malloc(sizeof(pos) * call); 
-    orderedWeights = posMergeSort(Weights, call);
+    pos *orderedWeights = (pos *)malloc(sizeof(pos) * numEdges); 
+    orderedWeights = posMergeSort(Weights, numEdges);
 
-    for (int i = 0; i < call; i++){
+    for (int i = 0; i < numEdges; i++){
         if (find(orderedWeights[i].row, parents) != find(orderedWeights[i].column, parents)){
             parents = union_(parents, find(orderedWeights[i].row, parents), find(orderedWeights[i].column, parents));
             minSpanTree[orderedWeights[i].row][orderedWeights[i].column] = orderedWeights[i].value;
@@ -63,7 +67,7 @@ void kruskal( int call, int nodes ) {
         }
     }
 
-    printf("Minium Spanning Tree Cost: %d\n", cost);
+    printf("Tree Cost: %d\n", cost);
     printf("Matrix: \n");
     PRINT(minSpanTree, &nodes);
 
@@ -83,7 +87,12 @@ int *union_(int *parents, int left, int right){
     return parents;
 }
 
-void prim( int ** matrix, int nodes ) {
+void prim( int ** matrix, int nodes, int numEdges) {
+
+    if (numEdges == 0){
+        return;
+    }
+
     int parents[nodes];
     int minKey, x, y;
     int cost = 0;
@@ -123,7 +132,11 @@ void prim( int ** matrix, int nodes ) {
 }
 
 
-void dijkstra(int numNodes, int startingNode, int endingNode, int **matrix){
+void dijkstra(int numNodes, int startingNode, int endingNode, int **matrix, int numEdges){
+
+    if (numEdges == 0){
+        return;
+    }
 
     int unvisitedNodes[numNodes];
     data table[numNodes];
@@ -176,7 +189,7 @@ int main() {
     int option;
     int **adjacentMatrix;
     int start, end;
-    int call = 0;
+    int numEdges = 0;
 
     Weights = (pos*)malloc( sizeof(pos) );
     adjacentMatrix = ( int ** )malloc( sizeof( int * ) * nodes );
@@ -188,7 +201,7 @@ int main() {
 
         switch (option) {
             case 1:
-                addWeight(adjacentMatrix, &nodes, &call);
+                addWeight(adjacentMatrix, &nodes, &numEdges);
                 break;
             case 2:
                 PRINT( adjacentMatrix, &nodes );
@@ -198,13 +211,13 @@ int main() {
                 scanf("%d", &start);
                 printf("Ending node: ");
                 scanf("%d", &end);
-                dijkstra(nodes, start, end, adjacentMatrix);
+                dijkstra(nodes, start, end, adjacentMatrix, numEdges);
                 break;
             case 4:
-                kruskal(call, nodes);
+                kruskal(numEdges, nodes);
                 break;
             case 5:
-                prim(adjacentMatrix, nodes);
+                prim(adjacentMatrix, nodes, numEdges);
                 break;
             case 6:
                 return 0;
@@ -214,15 +227,14 @@ int main() {
 }
 
 
-void addWeight( int ** matrix, int * numNodes, int * call ) {
-
-    // TODO: VERIFICAR SE REPETIR NODE1 E NODE2, SE REPETIR NAO INCREMENTAR CALL
+void addWeight( int ** matrix, int * numNodes, int * numEdges ) {
 
     int node1, node2, weight;
     int flag;
+    int NodesInGraph = 0;
 
-    if ( (*call) != 0 ){
-        Weights = (pos *)realloc(Weights, sizeof(pos) * ((*call) + 1));
+    if ( (*numEdges) != 0 ){
+        Weights = (pos *)realloc(Weights, sizeof(pos) * ((*numEdges) + 1));
     }
 
     do{
@@ -250,14 +262,23 @@ void addWeight( int ** matrix, int * numNodes, int * call ) {
 
 
 
-    Weights[(*call)].row = node1;
-    Weights[(*call)].column = node2;
-    Weights[(*call)].value = weight;
-    (*call)++;
+    Weights[(*numEdges)].row = node1;
+    Weights[(*numEdges)].column = node2;
+    Weights[(*numEdges)].value = weight;
+
+    for (int i = 0; i < *numEdges; i++){
+        if (node1 == Weights[i].row || node1 == Weights[i].column){
+            if (node2 == Weights[i].column || node2 == Weights[i].row){
+                NodesInGraph = 1;
+            }
+        }
+    }
+    if (!NodesInGraph){
+        (*numEdges)++;
+    }
     
     matrix[node1][node2] = weight;
-    matrix[node2][node1] = weight;
-    
+    matrix[node2][node1] = weight;    
 }
 
 
