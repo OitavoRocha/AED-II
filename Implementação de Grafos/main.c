@@ -26,15 +26,15 @@ int buildNodes();
 void addWeight( int ** matrix, int * numNodes, int * call);
 void MENU( int * option );
 void PRINT( int ** matrix, int * numNodes );
-void dijkstra(int numNodes, int startingNode, int endingNode, int **matrix);
-void kruskal(int call, int nodes);
-pos *posMerge(pos *leftArr, pos *rightArr, int n, int leftSize, int rightSize);
-pos *posMergeSort(pos *array, int n);
-int find(int idx, int *parents);
-int *union_(int *parents, int left, int right);
+void dijkstra( int numNodes, int startingNode, int endingNode, int **matrix );
+void kruskal( int call, int nodes );
+void prim( int ** matrix, int nodes );
+pos *posMerge( pos *leftArr, pos *rightArr, int n, int leftSize, int rightSize );
+pos *posMergeSort( pos *array, int n );
+int find( int idx, int *parents );
+int *union_( int *parents, int left, int right );
 
 void kruskal( int call, int nodes ) {
-
     
     printf("call: %d\n", call);
     printf("nodes: %d\n", nodes);
@@ -83,63 +83,43 @@ int *union_(int *parents, int left, int right){
     return parents;
 }
 
+void prim( int ** matrix, int nodes ) {
+    int parents[nodes];
+    int minKey, x, y;
+    int cost = 0;
 
+    for( int i = 0 ; i<nodes ; i++ ) 
+        parents[i] = 0;
+    
+    parents[0] = 1;
 
-pos *posMerge(pos *leftArr, pos *rightArr, int n, int leftSize, int rightSize) {
+    int i = 0;
+    printf("Minimun Spanning Tree:\nEdge\tWeight\n");
+    while ( i < nodes - 1 ) {
+        minKey = INT_MAX;
 
-    pos *output = (pos*)malloc(sizeof(pos) * n);
-    int i = 0, l = 0, r = 0;
+        x = 0, y = 0;
 
-    while (l < leftSize && r < rightSize) {
-        if (leftArr[l].value < rightArr[r].value) {
-            output[i] = leftArr[l]; 
-            i++;
-            l++;
-        } else {
-            output[i] = rightArr[r];
-            i++;
-            r++;
+        for( int j = 0 ; j<nodes ; j++ ) {
+            if ( parents[j] == 1 ) {
+                for ( int k = 0 ; k<nodes ; k++ ) {                    
+                    if( parents[k] == 0 && matrix[j][k] ) {
+                        if( minKey > matrix[j][k] ) {
+                            minKey = matrix[j][k];
+                            x = j, y = k;
+                        }
+                    }
+                }
+            }
         }
-    }
-    while (l < leftSize) {
-        output[i] = leftArr[l];
+
+        printf("%d - %d -- %d\n", x, y, matrix[x][y]);
+        cost += matrix[x][y];
+        parents[y] = 1;
         i++;
-        l++;
-    }
-    while (r < rightSize) {
-        output[i] = rightArr[r];
-        i++;
-        r++;
     }
 
-    return output;
-}
-
-pos *posMergeSort(pos *array, int n) {
-
-    if (n <= 1) {
-        return array;
-    }
-
-    int mid = n / 2;
-    pos *left = (pos *)malloc(sizeof(pos) * mid);
-    pos *right = (pos *)malloc(sizeof(pos) * (n - mid));
-    pos *resultado;
-    int idx = 0;
-
-    for (int i = 0; i < mid; i++) {
-        left[i] = array[i];
-    }
-    for (int j = mid; j < n; j++) {
-        right[idx] = array[j];
-        idx++;
-    }
-
-    left = posMergeSort(left, mid);
-    right = posMergeSort(right, n - mid);
-    resultado = posMerge(left, right, n, mid, n - mid);
-
-    return resultado;
+    printf("Tree Cost: %d\n", cost);
 }
 
 
@@ -224,6 +204,9 @@ int main() {
                 kruskal(call, nodes);
                 break;
             case 5:
+                prim(adjacentMatrix, nodes);
+                break;
+            case 6:
                 return 0;
                 break;
         } 
@@ -233,7 +216,7 @@ int main() {
 
 void addWeight( int ** matrix, int * numNodes, int * call ) {
 
-    // VERIFICAR SE REPETIR NODE1 E NODE2, SE REPETIR NAO INCREMENTAR CALL
+    // TODO: VERIFICAR SE REPETIR NODE1 E NODE2, SE REPETIR NAO INCREMENTAR CALL
 
     int node1, node2, weight;
     int flag;
@@ -297,9 +280,10 @@ void MENU( int * option ) {
         printf("  2.Print\n");
         printf("  3.Algoritmo de Dijkstra\n");
         printf("  4.Kruskal\n");
-        printf("  5.Quit\n");
+        printf("  5.Prim\n");
+        printf("  6.Quit\n");
         scanf("%d", option);
-    } while ( *option < 1 || *option > 5 );
+    } while ( *option < 1 || *option > 6 );
 }
 
 
@@ -317,4 +301,61 @@ void PRINT( int ** matrix, int * numNodes ) {
         }
         printf("\n");
     }
+}
+
+pos *posMerge(pos *leftArr, pos *rightArr, int n, int leftSize, int rightSize) {
+
+    pos *output = (pos*)malloc(sizeof(pos) * n);
+    int i = 0, l = 0, r = 0;
+
+    while (l < leftSize && r < rightSize) {
+        if (leftArr[l].value < rightArr[r].value) {
+            output[i] = leftArr[l]; 
+            i++;
+            l++;
+        } else {
+            output[i] = rightArr[r];
+            i++;
+            r++;
+        }
+    }
+    while (l < leftSize) {
+        output[i] = leftArr[l];
+        i++;
+        l++;
+    }
+    while (r < rightSize) {
+        output[i] = rightArr[r];
+        i++;
+        r++;
+    }
+
+    return output;
+}
+
+pos *posMergeSort(pos *array, int n) {
+
+    if (n <= 1) {
+        return array;
+    }
+
+    int mid = n / 2;
+    pos *left = (pos *)malloc(sizeof(pos) * mid);
+    pos *right = (pos *)malloc(sizeof(pos) * (n - mid));
+    pos *resultado;
+    int idx = 0;
+
+    for (int i = 0; i < mid; i++) {
+        left[i] = array[i];
+    }
+    for (int j = mid; j < n; j++) {
+        right[idx] = array[j];
+        idx++;
+    }
+
+    left = posMergeSort(left, mid);
+    right = posMergeSort(right, n - mid);
+    resultado = posMerge(left, right, n, mid, n - mid);
+
+    return resultado;
 }
