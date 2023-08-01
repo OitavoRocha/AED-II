@@ -1,4 +1,4 @@
-// Otávio Rocha, João Vitor Farias
+// Otávio Rocha, João Vitor Farias e Leonardo Melo
 // https://github.com/OitavoRocha/AED-II
 
 #include <stdio.h>
